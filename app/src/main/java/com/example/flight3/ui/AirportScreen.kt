@@ -127,7 +127,7 @@ private fun AirportBody(
             onValueChange = onValueChange
         )
 
-        if(nameValue != "") {
+        if(nameValue.isNotEmpty()) {
             Box(
                 modifier = modifier
             ){
@@ -138,7 +138,9 @@ private fun AirportBody(
                 )
             }
         } else {
-            Text(text = "here favorites")
+            Text(text = stringResource(id = R.string.favorite_routes),
+                modifier = modifier.padding(dimensionResource(id = R.dimen.padding_small))
+            )
             FavoritesList(
                 favorites = favoriteList,
                 deleteFavorite = deleteFavorites,
@@ -288,7 +290,12 @@ private fun FavoriteItem(
                     contentScale = ContentScale.FillWidth,
                     modifier = Modifier
                         .size(56.dp)
-                        .clickable { deleteFavorite(favorite.departureCode, favorite.destinationCode) }
+                        .clickable {
+                            deleteFavorite(
+                                favorite.departureCode,
+                                favorite.destinationCode
+                            )
+                        }
                 )
             }
         }

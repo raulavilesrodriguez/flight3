@@ -24,6 +24,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -42,12 +43,14 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.flight3.FlightTopAppBar
 import com.example.flight3.InputForm
 import com.example.flight3.R
 import com.example.flight3.ui.navigation.NavigationDestination
+import com.example.flight3.ui.theme.Flight3Theme
 import kotlinx.coroutines.launch
 
 object FlightDestination : NavigationDestination {
@@ -126,7 +129,9 @@ private fun RoutesBody(
         )
 
         if(nameWritten.isNotEmpty()){
-            Text(text = "El valor seteado:${nameWritten}")
+            Text(text = "Flights from $nameWritten",
+                modifier = modifier.padding(dimensionResource(id = R.dimen.padding_small))
+            )
             RoutesList(
                 routes = routesList,
                 addFavorites = {},
@@ -231,7 +236,8 @@ private fun RouteItem(
                     .fillMaxHeight()
 
             ) {
-                if(route.inFavorite == "true"){
+                addOrDelete = route.inFavorite == "true"
+                if(addOrDelete){
                     Image(
                         painter = painterResource(id = R.drawable.baseline_star_24),
                         contentDescription = null,
@@ -239,21 +245,67 @@ private fun RouteItem(
                         contentScale = ContentScale.FillWidth,
                         modifier = Modifier
                             .size(56.dp)
-                            .clickable { }
+                            .clickable {
+
+                                addOrDelete = false
+                            }
                     )
                 } else {
                     Image(
-                        painter = painterResource(id = R.drawable.baseline_star_white),
+                        painter = painterResource(id = R.drawable.baseline_star_grey),
                         contentDescription = null,
                         alignment = Alignment.Center,
                         contentScale = ContentScale.FillWidth,
                         modifier = Modifier
                             .size(56.dp)
-                            .clickable { }
+                            .clickable {
+
+                                addOrDelete = true
+                            }
                     )
                 }
 
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RouteItemPreview(){
+    Flight3Theme{
+        Surface {
+            RouteItem(
+                route = RoutesUiState(
+                    "Leonardo da Vinci International Airport",
+                    "FCO",
+                    "Humbuerto Delgado Airport",
+                    "LIS",
+                    "true"
+                    ),
+                addFavorites = {},
+                deleteFavorite = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RoutesListPreview(){
+    Flight3Theme{
+        Surface {
+            RoutesList(
+                routes = listOf(
+                    RoutesUiState("Francisco Carneiro Airport", "OPO", "Warsaw Chopin Airport","WAW", "false"),
+                    RoutesUiState("Francisco Carneiro Airport", "OPO", "Munich International Airport","MUC", "true"),
+                    RoutesUiState("Francisco Carneiro Airport", "OPO", "Dublin Airport","DUB", "false"),
+                    RoutesUiState("Francisco Carneiro Airport", "OPO", "Humberto Delgado Airport","LIS", "true")
+                ),
+                addFavorites = {},
+                deleteFavorite = {},
+                contentPadding = PaddingValues(0.dp)
+            )
         }
     }
 }
