@@ -173,7 +173,7 @@ private fun RouteItem(
     deleteFavorite: (Int) -> Unit,
     modifier: Modifier = Modifier
 ){
-    var addOrDelete by rememberSaveable { mutableStateOf(false) }
+    var addOrDelete by rememberSaveable { mutableStateOf(route.inFavorite == "true") }
     Card(
         modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -236,7 +236,6 @@ private fun RouteItem(
                     .fillMaxHeight()
 
             ) {
-                addOrDelete = route.inFavorite == "true"
                 if(addOrDelete){
                     Image(
                         painter = painterResource(id = R.drawable.baseline_star_24),
