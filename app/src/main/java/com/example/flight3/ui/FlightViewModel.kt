@@ -45,17 +45,6 @@ class FlightViewModel(
         flightRepository.deleteFavorite(departure, destination)
     }
 
-    val airChosenUiState: StateFlow<AUiState> =
-        flightRepository.getAirportStream(airportId)
-            .filterNotNull()
-            .map {
-                AUiState(it.iataCode)
-            }.stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = AUiState()
-            )
-
     init {
         viewModelScope.launch {
             flyUiState = flightRepository.getAirportStream(airportId)

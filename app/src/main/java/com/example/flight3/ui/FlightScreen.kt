@@ -29,6 +29,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -43,8 +47,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.flight3.FlightTopAppBar
 import com.example.flight3.InputForm
 import com.example.flight3.R
-import com.example.flight3.data.Airport
 import com.example.flight3.ui.navigation.NavigationDestination
+import kotlinx.coroutines.launch
 
 object FlightDestination : NavigationDestination {
     override val route = "flights_details"
@@ -58,12 +62,11 @@ object FlightDestination : NavigationDestination {
 fun FlightScreen(
     navigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModelRoutes: FlightViewModel = viewModel(factory = AppViewModelProvider.Factory),
-    viewModelAirports: AirportViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModelRoutes: FlightViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ){
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val routesUiState by viewModelRoutes.routesUiState.collectAsState()
-    val airChosenUiState by viewModelRoutes.airChosenUiState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -74,10 +77,13 @@ fun FlightScreen(
         }
     ) {innerPadding ->
         RoutesBody(
-            navigateBack = navigateBack,
+            navigateBack = {
+                           coroutineScope.launch {
+                               navigateBack()
+                           }
+            },
             routesList = routesUiState.airportsRoutes,
             onValueChange = viewModelRoutes::updateUiState,
-            nameValue = airChosenUiState.iataCode,
             nameWritten = viewModelRoutes.flyUiState.iataCode,
             modifier = modifier.fillMaxSize(),
             contentPadding = innerPadding
@@ -91,11 +97,12 @@ private fun RoutesBody(
     navigateBack: () -> Unit,
     routesList: List<RoutesUiState>,
     onValueChange: (String) -> Unit,
-    nameValue: String,
     nameWritten: String,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ){
+    var isInitialized by rememberSaveable{ mutableStateOf(false) }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -109,11 +116,24 @@ private fun RoutesBody(
                     top = contentPadding.calculateTopPadding()
                 )
                 .fillMaxWidth(),
-            onValueChange = onValueChange
+            onValueChange = {
+                onValueChange(it)
+                if(it.isEmpty() && isInitialized){
+                    navigateBack()
+                }
+                isInitialized = true
+            }
         )
-        Text(text = "El valor seteado:${nameWritten}")
-        Text(text = "El de la ruta: ${nameValue}")
 
+        if(nameWritten.isNotEmpty()){
+            Text(text = "El valor seteado:${nameWritten}")
+            RoutesList(
+                routes = routesList,
+                addFavorites = {},
+                deleteFavorite = {},
+                contentPadding = contentPadding
+            )
+        }
     }
 }
 
@@ -148,6 +168,7 @@ private fun RouteItem(
     deleteFavorite: (Int) -> Unit,
     modifier: Modifier = Modifier
 ){
+    var addOrDelete by rememberSaveable { mutableStateOf(false) }
     Card(
         modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),

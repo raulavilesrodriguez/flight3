@@ -88,6 +88,10 @@ class AirportViewModel(
         flightRepository.deleteFavorite(departure, destination)
     }
 
+    fun resetInputView(){
+        _uiState.value = NameUiState()
+    }
+
 }
 
 /**

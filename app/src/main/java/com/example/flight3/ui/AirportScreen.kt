@@ -64,7 +64,7 @@ object AirportDestination : NavigationDestination {
 fun AirportScreen(
     navigateToFlights: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AirportViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: AirportViewModel
 ){
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val nameUiState by viewModel.nameUiState.collectAsState()
@@ -74,7 +74,7 @@ fun AirportScreen(
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier,
         topBar = {
             FlightTopAppBar(
                 scrollBehavior = scrollBehavior
@@ -133,9 +133,7 @@ private fun AirportBody(
             ){
                 AirportList(
                     airportList = airportList,
-                    onAirportClick = {
-                        onAirportClick(it.id)
-                                     },
+                    onAirportClick = { onAirportClick(it.id) },
                     contentPadding = contentPadding
                 )
             }
