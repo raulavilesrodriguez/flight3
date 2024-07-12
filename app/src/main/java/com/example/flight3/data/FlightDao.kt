@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface FlightDao {
 
-    @Query("SELECT * FROM airport WHERE name LIKE :partName OR iata_code LIKE :partName")
+    @Query("SELECT * FROM airport WHERE name LIKE '%' || :partName || '%' OR iata_code LIKE '%' || :partName || '%'")
     fun getAirports(partName: String): Flow<List<Airport>>
 
     @Query("SELECT * FROM airport WHERE id = :id")
@@ -24,15 +24,15 @@ interface FlightDao {
             "    aa.name AS nameDestination,\n" +
             "    aa.iata_code AS destinationCode,\n" +
             "    CASE \n" +
-            "        WHEN f.destination_code = aa.iata_code THEN 'true' \n" +
+            "        WHEN f.destination_code = aa.iata_code AND f.departure_code = ad.iata_code THEN 'true' \n" +
             "        ELSE 'false' \n" +
-            "    END AS in_favorite\n" +
+            "    END AS inFavorite\n" +
             "FROM \n" +
             "    airport ad\n" +
             "INNER JOIN \n" +
             "    airport aa ON aa.id != :id\n" +
             "LEFT JOIN \n" +
-            "    favorite f ON f.destination_code = aa.iata_code\n" +
+            "    favorite f ON f.destination_code = aa.iata_code AND f.departure_code = ad.iata_code\n" +
             "WHERE \n" +
             "    ad.id = :id\n" +
             "ORDER BY \n" +
@@ -42,8 +42,8 @@ interface FlightDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertFavorite(favorite: Favorite)
 
-    @Query("DELETE FROM favorite WHERE id = :id")
-    suspend fun deleteFavorite(id: Int)
+    @Query("DELETE FROM favorite WHERE departure_code = :departure AND destination_code = :destination")
+    suspend fun deleteFavorite(departure: String, destination:String)
 
     @Query("SELECT f.id AS id,\n" +
             "       ad.name AS nameDeparture,\n" +

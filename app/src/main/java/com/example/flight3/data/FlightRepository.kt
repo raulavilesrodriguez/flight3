@@ -14,7 +14,7 @@ interface FlightRepository {
 
     suspend fun insertFavorite(favorite: Favorite)
 
-    suspend fun deleteFavorite(id: Int)
+    suspend fun deleteFavorite(departure: String, destination:String)
 
     fun getFavoritesStream(): Flow<List<FavoritesUiState>>
 }

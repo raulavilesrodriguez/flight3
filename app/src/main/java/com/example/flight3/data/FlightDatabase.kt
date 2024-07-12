@@ -15,7 +15,7 @@ abstract class FlightDatabase: RoomDatabase() {
 
         fun getDatabase(context: Context): FlightDatabase {
             return Instance ?: synchronized(this){
-                Room.databaseBuilder(context, FlightDatabase::class.java, "flight_search")
+                Room.databaseBuilder(context, FlightDatabase::class.java, "app_database")
                     .createFromAsset("database/flight_search.db")
                     .build()
                     .also { Instance = it }

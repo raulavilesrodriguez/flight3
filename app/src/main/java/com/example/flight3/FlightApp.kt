@@ -41,7 +41,11 @@ fun FlightTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior? = null,
 ){
     TopAppBar(
-        title = { R.string.app_name},
+        title = {
+            Text(
+                text = stringResource(id = R.string.app_name),
+            )
+                },
         modifier = modifier,
         scrollBehavior = scrollBehavior,
     )
@@ -49,7 +53,7 @@ fun FlightTopAppBar(
 
 @Composable
 fun InputForm(
-    partName: String = "",
+    partName: String,
     modifier: Modifier = Modifier,
     onValueChange: (String) -> Unit = {},
     enabled: Boolean = true

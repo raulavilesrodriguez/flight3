@@ -67,6 +67,7 @@ fun AirportScreen(
     viewModel: AirportViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ){
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val nameUiState by viewModel.nameUiState.collectAsState()
     val airportUiState by viewModel.airportUiState.collectAsState()
     val favoritesUiState by viewModel.favoritesUiState.collectAsState()
     val userTextsUiState by viewModel.userTextsUiState.collectAsState()
@@ -83,13 +84,13 @@ fun AirportScreen(
         AirportBody(
             airportList = airportUiState.airportList,
             onValueChange = viewModel::updateUiState,
-            nameValue = viewModel::getUiState,
+            nameValue = nameUiState.partName,
             onAirportClick = navigateToFlights,
             favoriteList = favoritesUiState.favorites,
-            deleteFavorites = {
-                              coroutineScope.launch {
-                                  viewModel.deleteFavorite(it)
-                              }
+            deleteFavorites = {departure, destination ->
+                coroutineScope.launch {
+                    viewModel.deleteFavorite(departure, destination)
+                }
             },
             userTextList =userTextsUiState.filteredText,
             modifier = modifier.fillMaxSize(),
@@ -102,10 +103,10 @@ fun AirportScreen(
 private fun AirportBody(
     airportList: List<Airport>,
     onValueChange: (String) -> Unit,
-    nameValue: () -> String,
+    nameValue: String,
     onAirportClick: (Int) -> Unit,
     favoriteList: List<FavoritesUiState>,
-    deleteFavorites: (Int) -> Unit,
+    deleteFavorites: (String, String) -> Unit,
     userTextList: List<String>,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -115,6 +116,7 @@ private fun AirportBody(
         modifier = modifier
     ) {
         InputForm(
+            partName = nameValue,
             modifier = Modifier
                 .padding(
                     start = contentPadding.calculateStartPadding(LocalLayoutDirection.current),
@@ -125,26 +127,25 @@ private fun AirportBody(
             onValueChange = onValueChange
         )
 
-        if(favoriteList.isNotEmpty() and (nameValue() == "")){
-            Text(
-                text = stringResource(id = R.string.favorite_routes),
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium,
-                modifier =  Modifier.padding(contentPadding)
-            )
+        if(nameValue != "") {
+            Box(
+                modifier = modifier
+            ){
+                AirportList(
+                    airportList = airportList,
+                    onAirportClick = {
+                        onAirportClick(it.id)
+                                     },
+                    contentPadding = contentPadding
+                )
+            }
+        } else {
+            Text(text = "here favorites")
             FavoritesList(
                 favorites = favoriteList,
                 deleteFavorite = deleteFavorites,
                 contentPadding = contentPadding
             )
-        } else if(nameValue() != "") {
-            AirportList(
-                airportList = airportList,
-                onAirportClick = { onAirportClick(it.id) },
-                contentPadding = contentPadding
-            )
-        } else {
-            {}
         }
     }
 }
@@ -195,7 +196,7 @@ private fun AirportItem(
 @Composable
 private fun FavoritesList(
     favorites: List<FavoritesUiState>,
-    deleteFavorite: (Int) -> Unit,
+    deleteFavorite: (String, String) -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ){
@@ -217,7 +218,7 @@ private fun FavoritesList(
 @Composable
 private fun FavoriteItem(
     favorite: FavoritesUiState,
-    deleteFavorite: (Int) -> Unit,
+    deleteFavorite: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ){
     Card(
@@ -289,7 +290,7 @@ private fun FavoriteItem(
                     contentScale = ContentScale.FillWidth,
                     modifier = Modifier
                         .size(56.dp)
-                        .clickable { deleteFavorite(favorite.id) }
+                        .clickable { deleteFavorite(favorite.departureCode, favorite.destinationCode) }
                 )
             }
         }
@@ -331,7 +332,7 @@ private fun FavoriteItemPreview(){
         Surface {
             FavoriteItem(favorite =
             FavoritesUiState(1,"Guayaquil Airport",
-                "Quito Airport","GYE", "UIO"), {})
+                "Quito Airport","GYE", "UIO"), {_, _ ->})
         }
     }
 }
@@ -347,7 +348,7 @@ private fun FavoritesListPreview(){
                 FavoritesUiState(3, "Leonardo da Vinci International Airport", "Humbuerto Delgado Airport", "FCO", "LIS"),
                 FavoritesUiState(5, "Vienna International Airport", "Sofia Airport", "VIE", "SOF")
             ),
-                deleteFavorite = {},
+                deleteFavorite = {_, _ ->},
                 contentPadding = PaddingValues(0.dp)
             )
         }

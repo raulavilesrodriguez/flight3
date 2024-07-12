@@ -8,22 +8,25 @@ import androidx.lifecycle.viewModelScope
 import com.example.flight3.data.Airport
 import com.example.flight3.data.FlightRepository
 import com.example.flight3.data.UserPreferencesRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AirportViewModel(
     private val flightRepository: FlightRepository,
     private val userPreferencesRepository: UserPreferencesRepository
 ): ViewModel() {
+    private val _uiState = MutableStateFlow(NameUiState())
+    val nameUiState: StateFlow<NameUiState> = _uiState.asStateFlow()
 
-    var nameUiState by mutableStateOf(NameUiState())
-
-    private fun validateInput(uiState: String = nameUiState.partName): Boolean{
+    private fun validateInput(uiState: String = _uiState.value.partName): Boolean{
         return uiState.isNotBlank()
     }
 
@@ -34,34 +37,35 @@ class AirportViewModel(
     /**
      * Update current airports ui state
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     var airportUiState : StateFlow<AirportsUiState> =
-        if(validateInput(nameUiState.partName)){
-            flightRepository.getAirportsStream("%${nameUiState.partName}%").map {
-                AirportsUiState(airportList = it) }
-                .stateIn(
-                    scope = viewModelScope,
-                    started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                    initialValue = AirportsUiState()
-                )
-        } else {
-            MutableStateFlow(AirportsUiState())
-        }
+        _uiState.flatMapLatest { uiState ->
+            flightRepository.getAirportsStream(uiState.partName).map {
+                AirportsUiState(airportList = it)
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+            initialValue = AirportsUiState()
+        )
+
+
 
     fun updateUiState(name: String){
-        nameUiState = NameUiState(name)
+        _uiState.update { currentState ->
+            currentState.copy(
+                partName = name
+            )
+        }
         viewModelScope.launch {
             userPreferencesRepository.saveUserText(name)
         }
     }
 
-    fun getUiState(): String{
-        return nameUiState.partName
-    }
-
     // UI states access to info of Data Store
     val userTextsUiState: StateFlow<TextsReleaseUIState> =
         userPreferencesRepository.userTexts.map { userTexts ->
-            TextsReleaseUIState(userTexts, nameUiState)
+            TextsReleaseUIState(userTexts, _uiState.value)
         }
             .stateIn(
                 scope = viewModelScope,
@@ -80,10 +84,9 @@ class AirportViewModel(
                 initialValue = ListFavoritesUiState()
             )
 
-    suspend fun deleteFavorite(int: Int){
-        flightRepository.deleteFavorite(int)
+    suspend fun deleteFavorite(departure: String, destination:String){
+        flightRepository.deleteFavorite(departure, destination)
     }
-
 
 }
 
