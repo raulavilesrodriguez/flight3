@@ -28,7 +28,6 @@ object AppViewModelProvider {
                 flightApplication().container.flightRepository
             )
         }
-
     }
 }
 

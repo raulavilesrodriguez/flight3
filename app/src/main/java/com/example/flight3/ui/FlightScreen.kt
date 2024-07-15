@@ -1,5 +1,6 @@
 package com.example.flight3.ui
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -65,10 +66,11 @@ object FlightDestination : NavigationDestination {
 fun FlightScreen(
     navigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModelRoutes: FlightViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModelFlight: FlightViewModel = viewModel(factory = AppViewModelProvider.Factory),
+
 ){
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-    val routesUiState by viewModelRoutes.routesUiState.collectAsState()
+    val routesUiState by viewModelFlight.routesUiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
@@ -79,6 +81,7 @@ fun FlightScreen(
             )
         }
     ) {innerPadding ->
+        Log.d("FlightScreen", "Routes: ${routesUiState.airportsRoutes}")
         RoutesBody(
             navigateBack = {
                            coroutineScope.launch {
@@ -86,8 +89,8 @@ fun FlightScreen(
                            }
             },
             routesList = routesUiState.airportsRoutes,
-            onValueChange = viewModelRoutes::updateUiState,
-            nameWritten = viewModelRoutes.flyUiState.iataCode,
+            onValueChange = viewModelFlight::updateUiState,
+            nameWritten = viewModelFlight.flyUiState.iataCode,
             modifier = modifier.fillMaxSize(),
             contentPadding = innerPadding
         )
@@ -127,17 +130,19 @@ private fun RoutesBody(
                 isInitialized = true
             }
         )
-
-        if(nameWritten.isNotEmpty()){
-            Text(text = "Flights from $nameWritten",
-                modifier = modifier.padding(dimensionResource(id = R.dimen.padding_small))
-            )
+        Text(text = stringResource(id = R.string.flight_routes, nameWritten),
+            modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_small))
+        )
+        if (routesList.isNotEmpty()) {
+            Log.d("RoutesBody", "Routes List: $routesList")
             RoutesList(
                 routes = routesList,
                 addFavorites = {},
                 deleteFavorite = {},
                 contentPadding = contentPadding
             )
+        } else {
+            Text(text = stringResource(id = R.string.warning_routes))
         }
     }
 }
@@ -145,8 +150,8 @@ private fun RoutesBody(
 @Composable
 private fun RoutesList(
     routes: List<RoutesUiState>,
-    addFavorites: (Int) -> Unit,
-    deleteFavorite: (Int) -> Unit,
+    addFavorites: () -> Unit,
+    deleteFavorite: () -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ){
@@ -155,6 +160,7 @@ private fun RoutesList(
         contentPadding = contentPadding
     ) {
         items(items = routes, key = {it.destinationCode}){
+            Log.d("RoutesList", "Route Item: $it")
             RouteItem(
                 route = it,
                 addFavorites = addFavorites,
@@ -167,10 +173,30 @@ private fun RoutesList(
 }
 
 @Composable
+private fun Veamos(
+    route: RoutesUiState,
+    modifier: Modifier = Modifier
+){
+    Row(
+        modifier = modifier.fillMaxWidth()
+    ) {
+      Text(
+          text = route.destinationCode,
+          modifier = Modifier
+              .padding(dimensionResource(id = R.dimen.padding_small))
+      )
+      Text(
+          text = route.nameDestination,
+          modifier = Modifier
+              .padding(dimensionResource(id = R.dimen.padding_small))
+      )
+    }
+}
+@Composable
 private fun RouteItem(
     route: RoutesUiState,
-    addFavorites: (Int) -> Unit,
-    deleteFavorite: (Int) -> Unit,
+    addFavorites: () -> Unit,
+    deleteFavorite: () -> Unit,
     modifier: Modifier = Modifier
 ){
     var addOrDelete by rememberSaveable { mutableStateOf(route.inFavorite == "true") }

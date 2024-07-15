@@ -9,7 +9,7 @@ class OfflineFlightsRepository(private val flightDao: FlightDao): FlightReposito
 
     override fun getAirportStream(id: Int): Flow<Airport?> = flightDao.getAirport(id)
 
-    override fun getFlightsStream(id: Int): Flow<List<RoutesUiState>?> = flightDao.getFlights(id)
+    override fun getFlightsStream(id: Int): Flow<List<RoutesUiState>> = flightDao.getFlights(id)
 
     override suspend fun insertFavorite(favorite: Favorite) = flightDao.insertFavorite(favorite)
 

@@ -10,7 +10,7 @@ interface FlightRepository {
 
     fun getAirportStream(id: Int): Flow<Airport?>
 
-    fun getFlightsStream(id: Int): Flow<List<RoutesUiState>?>
+    fun getFlightsStream(id: Int): Flow<List<RoutesUiState>>
 
     suspend fun insertFavorite(favorite: Favorite)
 
