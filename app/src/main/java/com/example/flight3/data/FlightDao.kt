@@ -26,7 +26,11 @@ interface FlightDao {
             "    CASE " +
             "        WHEN f.destination_code = aa.iata_code AND f.departure_code = ad.iata_code THEN 'true' " +
             "        ELSE 'false' " +
-            "    END AS inFavorite " +
+            "    END AS inFavorite, " +
+            "    CASE " +
+            "        WHEN f.destination_code = aa.iata_code AND f.departure_code = ad.iata_code THEN f.id " +
+            "        ELSE 0 " +
+            "    END AS idFavorite " +
             "FROM " +
             "    airport ad " +
             "INNER JOIN " +
@@ -42,8 +46,8 @@ interface FlightDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertFavorite(favorite: Favorite)
 
-    @Query("DELETE FROM favorite WHERE departure_code = :departure AND destination_code = :destination")
-    suspend fun deleteFavorite(departure: String, destination:String)
+    @Delete
+    suspend fun deleteFavorite(favorite: Favorite)
 
     @Query("SELECT f.id AS id,\n" +
             "       ad.name AS nameDeparture,\n" +

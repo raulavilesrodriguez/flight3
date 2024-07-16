@@ -8,6 +8,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.flight3.data.Airport
+import com.example.flight3.data.Favorite
 import com.example.flight3.data.FlightRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -32,6 +33,9 @@ class FlightViewModel(
     private val _rUiState = MutableStateFlow(FlightUiState())
     val routesUiState: StateFlow<FlightUiState> = _rUiState.asStateFlow()
 
+    var favoriteUiState by mutableStateOf(FUiState())
+        private set
+
     init {
         viewModelScope.launch {
             flyUiState = flightRepository.getAirportStream(airportId)
@@ -50,8 +54,17 @@ class FlightViewModel(
         flyUiState = AUiState(aUiState)
     }
 
-    suspend fun deleteFavorite(departure: String, destination:String){
-        flightRepository.deleteFavorite(departure, destination)
+    fun updateFUiState(favoriteDetails: FavoriteDetails){
+        favoriteUiState = FUiState(favoriteDetails = favoriteDetails)
+    }
+
+    suspend fun saveFavorite(){
+        flightRepository.insertFavorite(favoriteUiState.favoriteDetails.toFavorite())
+    }
+
+    suspend fun deleteFavorite(){
+        Log.d("DeleteFavorite", "Parametros: ${favoriteUiState.favoriteDetails.toFavorite()}")
+        flightRepository.deleteFavorite(favoriteUiState.favoriteDetails.toFavorite())
     }
 }
 
@@ -69,6 +82,7 @@ data class RoutesUiState(
     val nameDestination: String = "",
     val destinationCode: String = "",
     val inFavorite: String = "",
+    val idFavorite: String = ""
 )
 
 /**
@@ -76,4 +90,23 @@ data class RoutesUiState(
  */
 data class FlightUiState(
     val airportsRoutes: List<RoutesUiState> = listOf(),
+)
+
+/**
+ * To Add and delete of Favorite table
+ */
+data class FavoriteDetails(
+    val id : Int = 0,
+    val departureCode: String = "",
+    val destinationCode: String = ""
+)
+
+data class FUiState(
+    val favoriteDetails: FavoriteDetails = FavoriteDetails()
+)
+
+fun FavoriteDetails.toFavorite(): Favorite = Favorite(
+    id = id,
+    departureCode = departureCode,
+    destinationCode = destinationCode
 )

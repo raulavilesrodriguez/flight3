@@ -87,9 +87,11 @@ fun AirportScreen(
             nameValue = nameUiState.partName,
             onAirportClick = navigateToFlights,
             favoriteList = favoritesUiState.favorites,
-            deleteFavorites = {departure, destination ->
+            favoriteUiState = viewModel.favoriteUiState,
+            onFavoriteChange = viewModel::updateFUiState,
+            deleteFavorites = {
                 coroutineScope.launch {
-                    viewModel.deleteFavorite(departure, destination)
+                    viewModel.deleteFavorite()
                 }
             },
             userTextList =userTextsUiState.filteredText,
@@ -106,7 +108,9 @@ private fun AirportBody(
     nameValue: String,
     onAirportClick: (Int) -> Unit,
     favoriteList: List<FavoritesUiState>,
-    deleteFavorites: (String, String) -> Unit,
+    favoriteUiState: FUiState,
+    onFavoriteChange:(FavoriteDetails) -> Unit,
+    deleteFavorites: () -> Unit,
     userTextList: List<String>,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -139,10 +143,12 @@ private fun AirportBody(
             }
         } else {
             Text(text = stringResource(id = R.string.favorite_routes),
-                modifier = modifier.padding(dimensionResource(id = R.dimen.padding_small))
+                modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_small))
             )
             FavoritesList(
                 favorites = favoriteList,
+                favoriteUiState = favoriteUiState,
+                onFavoriteChange = onFavoriteChange,
                 deleteFavorite = deleteFavorites,
                 contentPadding = contentPadding
             )
@@ -196,7 +202,9 @@ private fun AirportItem(
 @Composable
 private fun FavoritesList(
     favorites: List<FavoritesUiState>,
-    deleteFavorite: (String, String) -> Unit,
+    favoriteUiState: FUiState,
+    onFavoriteChange:(FavoriteDetails) -> Unit,
+    deleteFavorite: () -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ){
@@ -207,6 +215,8 @@ private fun FavoritesList(
         items(items = favorites, key = {it.id}){
             FavoriteItem(
                 favorite = it,
+                favoriteDetails = favoriteUiState.favoriteDetails,
+                onFavoriteChange = onFavoriteChange,
                 deleteFavorite = deleteFavorite,
                 modifier = Modifier
                     .padding(dimensionResource(id = R.dimen.padding_small))
@@ -218,7 +228,9 @@ private fun FavoritesList(
 @Composable
 private fun FavoriteItem(
     favorite: FavoritesUiState,
-    deleteFavorite: (String, String) -> Unit,
+    favoriteDetails: FavoriteDetails,
+    onFavoriteChange: (FavoriteDetails) -> Unit = {},
+    deleteFavorite: () -> Unit,
     modifier: Modifier = Modifier
 ){
     Card(
@@ -291,10 +303,12 @@ private fun FavoriteItem(
                     modifier = Modifier
                         .size(56.dp)
                         .clickable {
-                            deleteFavorite(
-                                favorite.departureCode,
-                                favorite.destinationCode
-                            )
+                            onFavoriteChange(favoriteDetails.copy(
+                                id = favorite.id,
+                                departureCode = favorite.departureCode,
+                                destinationCode = favorite.destinationCode
+                            ))
+                            deleteFavorite()
                         }
                 )
             }
@@ -337,7 +351,10 @@ private fun FavoriteItemPreview(){
         Surface {
             FavoriteItem(favorite =
             FavoritesUiState(1,"Guayaquil Airport",
-                "Quito Airport","GYE", "UIO"), {_, _ ->})
+                "Quito Airport","GYE", "UIO"),
+                favoriteDetails = FavoriteDetails(),
+                deleteFavorite = {}
+                )
         }
     }
 }
@@ -353,7 +370,9 @@ private fun FavoritesListPreview(){
                 FavoritesUiState(3, "Leonardo da Vinci International Airport", "Humbuerto Delgado Airport", "FCO", "LIS"),
                 FavoritesUiState(5, "Vienna International Airport", "Sofia Airport", "VIE", "SOF")
             ),
-                deleteFavorite = {_, _ ->},
+                favoriteUiState = FUiState(FavoriteDetails()),
+                onFavoriteChange = {},
+                deleteFavorite = {},
                 contentPadding = PaddingValues(0.dp)
             )
         }

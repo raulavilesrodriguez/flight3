@@ -1,5 +1,6 @@
 package com.example.flight3.ui
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -23,12 +24,12 @@ class AirportViewModel(
     private val flightRepository: FlightRepository,
     private val userPreferencesRepository: UserPreferencesRepository
 ): ViewModel() {
+
     private val _uiState = MutableStateFlow(NameUiState())
     val nameUiState: StateFlow<NameUiState> = _uiState.asStateFlow()
 
-    private fun validateInput(uiState: String = _uiState.value.partName): Boolean{
-        return uiState.isNotBlank()
-    }
+    var favoriteUiState by mutableStateOf(FUiState())
+        private set
 
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
@@ -84,8 +85,13 @@ class AirportViewModel(
                 initialValue = ListFavoritesUiState()
             )
 
-    suspend fun deleteFavorite(departure: String, destination:String){
-        flightRepository.deleteFavorite(departure, destination)
+    fun updateFUiState(favoriteDetails: FavoriteDetails){
+        favoriteUiState = FUiState(favoriteDetails = favoriteDetails)
+    }
+
+    suspend fun deleteFavorite(){
+        Log.d("DeleteFavorite", "Parametros: ${favoriteUiState.favoriteDetails.toFavorite()}")
+        flightRepository.deleteFavorite(favoriteUiState.favoriteDetails.toFavorite())
     }
 
     fun resetInputView(){

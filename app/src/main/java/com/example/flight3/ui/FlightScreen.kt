@@ -67,7 +67,6 @@ fun FlightScreen(
     navigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModelFlight: FlightViewModel = viewModel(factory = AppViewModelProvider.Factory),
-
 ){
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val routesUiState by viewModelFlight.routesUiState.collectAsState()
@@ -91,6 +90,18 @@ fun FlightScreen(
             routesList = routesUiState.airportsRoutes,
             onValueChange = viewModelFlight::updateUiState,
             nameWritten = viewModelFlight.flyUiState.iataCode,
+            favoriteUiState = viewModelFlight.favoriteUiState,
+            onFavoriteChange = viewModelFlight::updateFUiState,
+            addFavorite = {
+                coroutineScope.launch {
+                    viewModelFlight.saveFavorite()
+                }
+            },
+            deleteFavorite = {
+                coroutineScope.launch {
+                    viewModelFlight.deleteFavorite()
+                }
+            },
             modifier = modifier.fillMaxSize(),
             contentPadding = innerPadding
         )
@@ -104,6 +115,10 @@ private fun RoutesBody(
     routesList: List<RoutesUiState>,
     onValueChange: (String) -> Unit,
     nameWritten: String,
+    favoriteUiState: FUiState,
+    onFavoriteChange:(FavoriteDetails) -> Unit,
+    addFavorite: () -> Unit,
+    deleteFavorite: () -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ){
@@ -137,8 +152,10 @@ private fun RoutesBody(
             Log.d("RoutesBody", "Routes List: $routesList")
             RoutesList(
                 routes = routesList,
-                addFavorites = {},
-                deleteFavorite = {},
+                favoriteUiState = favoriteUiState,
+                onFavoriteChange = onFavoriteChange,
+                addFavorite = addFavorite,
+                deleteFavorite = deleteFavorite,
                 contentPadding = contentPadding
             )
         } else {
@@ -150,7 +167,9 @@ private fun RoutesBody(
 @Composable
 private fun RoutesList(
     routes: List<RoutesUiState>,
-    addFavorites: () -> Unit,
+    favoriteUiState: FUiState,
+    onFavoriteChange: (FavoriteDetails) -> Unit,
+    addFavorite: () -> Unit,
     deleteFavorite: () -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
@@ -163,7 +182,9 @@ private fun RoutesList(
             Log.d("RoutesList", "Route Item: $it")
             RouteItem(
                 route = it,
-                addFavorites = addFavorites,
+                favoriteDetails = favoriteUiState.favoriteDetails,
+                onFavoriteChange = onFavoriteChange,
+                addFavorite = addFavorite,
                 deleteFavorite = deleteFavorite,
                 modifier = Modifier
                     .padding(dimensionResource(id = R.dimen.padding_small))
@@ -173,29 +194,11 @@ private fun RoutesList(
 }
 
 @Composable
-private fun Veamos(
-    route: RoutesUiState,
-    modifier: Modifier = Modifier
-){
-    Row(
-        modifier = modifier.fillMaxWidth()
-    ) {
-      Text(
-          text = route.destinationCode,
-          modifier = Modifier
-              .padding(dimensionResource(id = R.dimen.padding_small))
-      )
-      Text(
-          text = route.nameDestination,
-          modifier = Modifier
-              .padding(dimensionResource(id = R.dimen.padding_small))
-      )
-    }
-}
-@Composable
 private fun RouteItem(
     route: RoutesUiState,
-    addFavorites: () -> Unit,
+    favoriteDetails: FavoriteDetails,
+    onFavoriteChange: (FavoriteDetails) -> Unit = {},
+    addFavorite: () -> Unit,
     deleteFavorite: () -> Unit,
     modifier: Modifier = Modifier
 ){
@@ -271,7 +274,11 @@ private fun RouteItem(
                         modifier = Modifier
                             .size(56.dp)
                             .clickable {
-
+                                onFavoriteChange(favoriteDetails.copy(
+                                    id = route.idFavorite.toInt(),
+                                    departureCode = route.departureCode,
+                                    destinationCode = route.destinationCode))
+                                deleteFavorite()
                                 addOrDelete = false
                             }
                     )
@@ -284,7 +291,10 @@ private fun RouteItem(
                         modifier = Modifier
                             .size(56.dp)
                             .clickable {
-
+                                onFavoriteChange(favoriteDetails.copy(
+                                    departureCode = route.departureCode,
+                                    destinationCode = route.destinationCode))
+                                addFavorite()
                                 addOrDelete = true
                             }
                     )
@@ -308,7 +318,8 @@ private fun RouteItemPreview(){
                     "LIS",
                     "true"
                     ),
-                addFavorites = {},
+                favoriteDetails = FavoriteDetails(),
+                addFavorite = {},
                 deleteFavorite = {}
             )
         }
@@ -327,7 +338,9 @@ private fun RoutesListPreview(){
                     RoutesUiState("Francisco Carneiro Airport", "OPO", "Dublin Airport","DUB", "false"),
                     RoutesUiState("Francisco Carneiro Airport", "OPO", "Humberto Delgado Airport","LIS", "true")
                 ),
-                addFavorites = {},
+                favoriteUiState = FUiState(FavoriteDetails()),
+                onFavoriteChange = {},
+                addFavorite = {},
                 deleteFavorite = {},
                 contentPadding = PaddingValues(0.dp)
             )
