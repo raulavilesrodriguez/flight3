@@ -7,6 +7,7 @@
     <string name="arrive">ARRIVE</string>
     <string name="airports"> </string>
     <string name="flight_routes">Flights from %s</string>
+    <string name="search_airports">%s | </string>
     <string name="warning_routes">One moment Routes are being processed…</string>
     <string name="favorite_routes">Favorite routes</string>
 </resources>

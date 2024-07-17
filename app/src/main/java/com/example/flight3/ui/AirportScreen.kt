@@ -1,9 +1,7 @@
 package com.example.flight3.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,8 +33,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.dimensionResource
@@ -44,7 +41,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.flight3.FlightTopAppBar
 import com.example.flight3.InputForm
 import com.example.flight3.R
@@ -131,14 +127,15 @@ private fun AirportBody(
             onValueChange = onValueChange
         )
 
-        if(nameValue.isNotEmpty()) {
-            Box(
-                modifier = modifier
-            ){
+        if(nameValue.isNotEmpty()){
+            Box(modifier = modifier) {
                 AirportList(
+                    userTextList = userTextList,
+                    onValueChange = onValueChange,
                     airportList = airportList,
                     onAirportClick = { onAirportClick(it.id) },
-                    contentPadding = contentPadding
+                    contentPadding = contentPadding,
+                    modifier = Modifier
                 )
             }
         } else {
@@ -156,8 +153,37 @@ private fun AirportBody(
     }
 }
 
+
+@Composable
+private fun UserTextList(
+    userTextList: List<String>,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+){
+    LazyRow(
+        modifier = modifier,
+        userScrollEnabled = true,
+        contentPadding = contentPadding
+    ) {
+        items(
+            items = userTextList,
+            key = {text -> text}
+        ){
+            Text(
+                text = stringResource(id = R.string.search_airports, it),
+                modifier = Modifier
+                    .padding(dimensionResource(id = R.dimen.padding_very_small))
+                    .clickable { onValueChange(it) }
+            )
+        }
+    }
+}
+
 @Composable
 private fun AirportList(
+    userTextList: List<String>,
+    onValueChange: (String) -> Unit,
     airportList: List<Airport>,
     onAirportClick: (Airport) -> Unit,
     contentPadding: PaddingValues,
@@ -167,6 +193,13 @@ private fun AirportList(
         modifier = modifier,
         contentPadding = contentPadding
     ) {
+        item{
+            UserTextList(
+                userTextList = userTextList,
+                onValueChange = onValueChange,
+                modifier = Modifier
+            )
+        }
         items(items = airportList, key = {it.id}){
             AirportItem(
                 airport = it,
@@ -303,11 +336,13 @@ private fun FavoriteItem(
                     modifier = Modifier
                         .size(56.dp)
                         .clickable {
-                            onFavoriteChange(favoriteDetails.copy(
-                                id = favorite.id,
-                                departureCode = favorite.departureCode,
-                                destinationCode = favorite.destinationCode
-                            ))
+                            onFavoriteChange(
+                                favoriteDetails.copy(
+                                    id = favorite.id,
+                                    departureCode = favorite.departureCode,
+                                    destinationCode = favorite.destinationCode
+                                )
+                            )
                             deleteFavorite()
                         }
                 )
@@ -321,7 +356,10 @@ private fun FavoriteItem(
 private fun AirportListPreview() {
     Flight3Theme {
         Surface {
-            AirportList(airportList = listOf(
+            AirportList(
+                userTextList = listOf(),
+                onValueChange = {},
+                airportList = listOf(
                 Airport(1, "Francisco Carneiro", "OPO", 5053134),
                 Airport(2, "Stockholm Arlanda Airport", "ARN", 7494765),
                 Airport(3, "Dublin Airport", "DUB", 32907673),

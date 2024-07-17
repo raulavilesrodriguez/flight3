@@ -64,17 +64,19 @@ class AirportViewModel(
     }
 
     // UI states access to info of Data Store
+    @OptIn(ExperimentalCoroutinesApi::class)
     val userTextsUiState: StateFlow<TextsReleaseUIState> =
-        userPreferencesRepository.userTexts.map { userTexts ->
-            TextsReleaseUIState(userTexts, _uiState.value)
-        }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = TextsReleaseUIState()
-            )
+        _uiState.flatMapLatest {uiState ->
+            userPreferencesRepository.userTexts.map { userTexts ->
+                TextsReleaseUIState(userTexts, uiState)
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+            initialValue = TextsReleaseUIState()
+        )
 
-
+    // UI states of Favorites to AirportScreen.kt
     val favoritesUiState: StateFlow<ListFavoritesUiState> =
         flightRepository.getFavoritesStream()
             .map {
@@ -90,8 +92,10 @@ class AirportViewModel(
     }
 
     suspend fun deleteFavorite(){
-        Log.d("DeleteFavorite", "Parametros: ${favoriteUiState.favoriteDetails.toFavorite()}")
+        Log.d("DeleteFavoriteAirport", "Parametros: ${favoriteUiState.favoriteDetails.toFavorite()}")
         flightRepository.deleteFavorite(favoriteUiState.favoriteDetails.toFavorite())
+
+
     }
 
     fun resetInputView(){
